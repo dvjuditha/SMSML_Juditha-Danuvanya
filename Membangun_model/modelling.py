@@ -7,7 +7,7 @@ from sklearn.ensemble import RandomForestClassifier
 mlflow.set_tracking_uri("http://127.0.0.1:5000/")
 mlflow.set_experiment("Breast Cancer - Basic")
 
-DATA_DIR = os.path.join("..", "breast_cancer_preprocessing")
+DATA_DIR = os.path.join("breast_cancer_preprocessing")
 X_train = pd.read_csv(os.path.join(DATA_DIR, "X_train.csv"))
 X_test  = pd.read_csv(os.path.join(DATA_DIR, "X_test.csv"))
 y_train = pd.read_csv(os.path.join(DATA_DIR, "y_train.csv")).squeeze()

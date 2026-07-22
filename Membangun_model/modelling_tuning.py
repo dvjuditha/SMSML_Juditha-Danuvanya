@@ -1,4 +1,5 @@
 import os
+import json
 import mlflow
 import dagshub
 from dotenv import load_dotenv
@@ -16,6 +17,9 @@ DAGSHUB_REPO = os.getenv("DAGSHUB_REPO")
 
 if DAGSHUB_USER and DAGSHUB_REPO:
     print(f"Connecting to DagsHub: {DAGSHUB_USER}/{DAGSHUB_REPO}")
+    dagshub_token = os.getenv("DAGSHUB_USER_TOKEN")
+    if dagshub_token:
+        dagshub.auth.add_app_token(dagshub_token)
     dagshub.init(repo_owner=DAGSHUB_USER, repo_name=DAGSHUB_REPO, mlflow=True)
 else:
     print("WARNING: DAGSHUB_USER or DAGSHUB_REPO not found in .env. Falling back to local MLflow.")
@@ -23,7 +27,7 @@ else:
 
 mlflow.set_experiment("Breast Cancer - Advanced Tuning")
 
-DATA_DIR = os.path.join("..", "breast_cancer_preprocessing")
+DATA_DIR = os.path.join("breast_cancer_preprocessing")
 X_train = pd.read_csv(os.path.join(DATA_DIR, "X_train.csv"))
 X_test  = pd.read_csv(os.path.join(DATA_DIR, "X_test.csv"))
 y_train = pd.read_csv(os.path.join(DATA_DIR, "y_train.csv")).squeeze()
@@ -81,4 +85,19 @@ with mlflow.start_run(run_name="GBM-Tuned-BreastCancer"):
         f.write(f"X_test: {X_test.shape}\n")
     mlflow.log_artifact("data_shapes.txt")
     
+# --- LOCAL ARTIFACTS DUMP ---
+import json
+os.makedirs("tuning_artifacts", exist_ok=True)
+report = {
+    "accuracy": accuracy,
+    "f1_score": f1,
+    "roc_auc": roc_auc,
+    "precision": precision,
+    "recall": recall,
+    "best_params": best_params
+}
+with open("tuning_artifacts/classification_report.json", "w") as f:
+    json.dump(report, f, indent=4)
+print("Saved local JSON report to tuning_artifacts/classification_report.json")
+
 print("Advanced tuning complete and logged manually to MLflow!")

@@ -27,7 +27,7 @@ jobs:
         run: |
           pip install mlflow==2.19.0 dagshub virtualenv
           # Move data to MLProject folder so it can access it
-          cp -r breast_cancer_preprocessing Workflow-CI/MLProject/
+          cp -r Membangun_model/breast_cancer_preprocessing Workflow-CI/MLProject/
           cd Workflow-CI/MLProject
           mlflow run .
 
