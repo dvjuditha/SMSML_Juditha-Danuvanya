@@ -58,11 +58,11 @@ jobs:
           export RUN_ID=$RUN_ID
           python -c "import mlflow, os; mlflow.set_tracking_uri(os.environ['MLFLOW_TRACKING_URI']); mlflow.artifacts.download_artifacts(artifact_uri='runs:/' + os.environ['RUN_ID'] + '/model', dst_path='./downloaded_model')"
 
-          cat <<EOF > Dockerfile
+          cat <<'EOF' > Dockerfile
           FROM python:3.12-slim
-          COPY downloaded_model /model
+          COPY downloaded_model /downloaded_model
           RUN pip install mlflow==2.19.0 pandas scikit-learn
-          CMD mlflow models serve -m /model -h 0.0.0.0 -p 8080 --env-manager=local
+          CMD mlflow models serve -m $(dirname $(find /downloaded_model -name MLmodel | head -n 1)) -h 0.0.0.0 -p 8080 --env-manager=local
           EOF
           
           docker build -t ${{ secrets.DOCKER_USERNAME }}/breast-cancer-model:latest .
