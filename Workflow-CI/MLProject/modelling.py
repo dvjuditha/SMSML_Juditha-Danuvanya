@@ -10,6 +10,9 @@ DAGSHUB_REPO = os.getenv("DAGSHUB_REPO")
 
 if DAGSHUB_USER and DAGSHUB_REPO:
     print(f"Connecting to DagsHub: {DAGSHUB_USER}/{DAGSHUB_REPO}")
+    dagshub_token = os.getenv("DAGSHUB_USER_TOKEN")
+    if dagshub_token:
+        dagshub.auth.add_app_token(dagshub_token)
     dagshub.init(repo_owner=DAGSHUB_USER, repo_name=DAGSHUB_REPO, mlflow=True)
 
 mlflow.set_experiment("Breast Cancer - CI Pipeline")
