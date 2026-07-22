@@ -1,0 +1,55 @@
+name: Workflow CI ML Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  train_and_build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Run MLflow Project
+        env:
+          DAGSHUB_USER: ${{ secrets.DAGSHUB_USER }}
+          DAGSHUB_REPO: ${{ secrets.DAGSHUB_REPO }}
+          MLFLOW_TRACKING_USERNAME: ${{ secrets.DAGSHUB_USER }}
+          MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}
+        run: |
+          pip install mlflow==2.19.0 dagshub virtualenv
+          # Move data to MLProject folder so it can access it
+          cp -r breast_cancer_preprocessing Workflow-CI/MLProject/
+          cd Workflow-CI/MLProject
+          mlflow run .
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build Docker Image using MLflow (Advanced)
+        env:
+          MLFLOW_TRACKING_URI: https://dagshub.com/${{ secrets.DAGSHUB_USER }}/${{ secrets.DAGSHUB_REPO }}.mlflow
+          MLFLOW_TRACKING_USERNAME: ${{ secrets.DAGSHUB_USER }}
+          MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}
+        run: |
+          # Fetch the latest run id from DagsHub
+          RUN_ID=$(curl -u ${{ secrets.DAGSHUB_USER }}:${{ secrets.DAGSHUB_TOKEN }} \
+            -X POST $MLFLOW_TRACKING_URI/api/2.0/mlflow/runs/search \
+            -H "Content-Type: application/json" \
+            -d '{"experiment_ids": ["0"], "max_results": 1, "order_by": ["attribute.start_time DESC"]}' \
+            | jq -r '.runs[0].info.run_id')
+            
+          echo "Building Docker for RUN_ID: $RUN_ID"
+          mlflow models build-docker -m "runs:/$RUN_ID/model" -n ${{ secrets.DOCKER_USERNAME }}/breast-cancer-model:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/breast-cancer-model:latest
