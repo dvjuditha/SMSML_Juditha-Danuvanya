@@ -15,7 +15,7 @@ if DAGSHUB_USER and DAGSHUB_REPO:
         dagshub.auth.add_app_token(dagshub_token)
     dagshub.init(repo_owner=DAGSHUB_USER, repo_name=DAGSHUB_REPO, mlflow=True)
 
-mlflow.set_experiment("Breast Cancer - CI Pipeline")
+# Experiment is managed by mlflow run CLI or default DagsHub tracking
 
 DATA_DIR = "breast_cancer_preprocessing" # relative to MLProject execution path
 X_train = pd.read_csv(os.path.join(DATA_DIR, "X_train.csv"))
